@@ -1,3 +1,8 @@
+Drone Delivery Service
+A squad of drones is tasked with delivering packages for a major online retailer in a world where 
+time and distance do not matter.
+
+
 ## Recommended IDE Setup
 
 [VSCode](https://code.visualstudio.com/)
