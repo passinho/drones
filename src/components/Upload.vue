@@ -102,7 +102,7 @@ export default {
         //cria um objeto para armazenar os drones e seus pesos
         const AllElements = {};
         names.forEach( function (value, i) { 
-            AllElements[i] = { name: names[i], value: weight[i], weight: weight[i].replace('[', '').replace(']', '') }
+            AllElements[i] = { name: names[i], value: weight[i], weight: weight[i].replace('[', '').replace(']', ''), maxCapacity: weight[i].replace('[', '').replace(']', '') }
         })
 
       //   // Extrai informações dos drones e das localizações
@@ -129,112 +129,184 @@ export default {
 
         // Step 2: Sort drones by maximum weight capacity
         drones.sort((a, b) => b.weight - a.weight);
-
+        
         // Step 3: Sort locations by weight
         locations.sort((a, b) => b.weight - a.weight);
 
         // Step 4: Create list of trips for each drone
         drones.forEach(drone => {
-          let currentTrip = [];
           drone.trips = [];
-          drone.trips.push(currentTrip);
         });
 
-        let remainingLocations = [...locations]; // Criando uma cópia da lista original de locais
+        let newLocations = [...locations]; // Criando uma cópia da lista original de locais
 
-        // Step 5: Add locations to trips
-        const getDrone = () => {
-             
-          drones.sort(compareByName);
 
-          while (remainingLocations.length > 0) {
-            let drone = processNextDrone();
-            let remainingCapacity = drone.weight;
-            let tripIndex = 1;
-
-              // Inicie o processamento chamando a função para o primeiro drone
-            
-              const currentTrip = [];
-              let locationsToRemove = [];
-              
-              remainingLocations.forEach((location, index) => {
-                if (remainingCapacity >= location.weight) {
-                  currentTrip.push(location);
-                  remainingCapacity -= location.weight;
-                  locationsToRemove.push(index);
-                }
-              });
-
-              // Removendo os locais adicionados à viagem atual
-              locationsToRemove.reverse().forEach(index => {
-                remainingLocations.splice(index, 1);
-              });
-
-              if (currentTrip.length > 0) {
-                  drone.trips.push({
-                    tripNumber: tripIndex,
-                    locations: currentTrip
-                  });
-                
-                remainingCapacity = drone.weight;
-                tripIndex++;
-
-              } else {
-                break; // Sai do loop se não houver locais suficientes para uma viagem
-              }
+      function filterLocations(locations, targetValue) {
+          const filteredLocations = locations.reduce((accumulator, location) => {
+            const totalWeight = accumulator.reduce((sum, loc) => sum + loc.weight, 0);
+            if (totalWeight + location.weight <= targetValue) {
+              accumulator.push(location);
             }
-          }
-      
-        let currentIndex = 0;
+            return accumulator;
+          }, []);
 
-        function processNextDrone() {
-          const currentDrone = drones[currentIndex];
+          const remainingLocations = locations.filter(location => !filteredLocations.includes(location));
 
-          // Faça o processamento necessário para o drone atual aqui
-          console.log('Processando o drone:', currentDrone);
-            // Atualize o índice para avançar para o próximo drone
-          ++currentIndex;
-
-          // Atualize o índice para avançar para o próximo drone
-          
-
-          // Verifique se todos os drones foram processados e ainda há locais restantes
-          if (currentIndex >= drones.length && remainingLocations.length > 0) {
-            // Reinicie a iteração dos drones
-            currentIndex = 0;
-            console.log('Reiniciando a iteração dos drones.');
-          }
-
-          // Verifique se ainda há drones para processar e locais restantes
-          if (currentIndex <= drones.length && remainingLocations.length > 0) {
-            // Aguarde um intervalo de tempo antes de chamar o próximo drone (opcional)
-            return drones[currentIndex];
-          } else {
-            console.log('Não há mais locais.');
-          }
+          return { filteredLocations, remainingLocations };
         }
 
-          getDrone()
+
+        const targetValue = 200;
 
 
-        // Step 6: Output trips for each drone
-        const show = () => {
+
+
+        while (newLocations.length > 0) {
+          let drone = processNextDrone(); 
+          
+          let { filteredLocations, remainingLocations } = filterLocations(newLocations, drone,weight);
+
+            drone.trips.push({
+                tripNumber: tripIndex,
+                locations: filteredLocations
+              });
+        }
+
+
+
+        function processNextDrone(currentIndex) {
+            const currentDrone = drones[currentIndex];
+
+            // Faça o processamento necessário para o drone atual aqui
+            console.log('Processando o drone:', currentDrone);
+              // Atualize o índice para avançar para o próximo drone
+            ++currentIndex;
+
+            // Atualize o índice para avançar para o próximo drone
+
+
+            // Verifique se todos os drones foram processados e ainda há locais restantes
+            if (currentIndex >= drones.length && remainingLocations.length > 0) {
+              // Reinicie a iteração dos drones
+              currentIndex = 0;
+              console.log('Reiniciando a iteração dos drones.');
+            }
+
+            // Verifique se ainda há drones para processar e locais restantes
+            if (currentIndex <= drones.length && remainingLocations.length > 0) {
+              // Aguarde um intervalo de tempo antes de chamar o próximo drone (opcional)
+              return drones[currentIndex];
+            } else {
+              console.log('Não há mais locais.');
+            }
+          }
+
+
+        console.log('Filtered Locations:');
+        filteredLocations.forEach(location => console.log(location.name));
+
+        console.log('Remaining Locations:');
+        remainingLocations.forEach(location => console.log(location.name));
+
+
+
+
+                //part 2
+      //   // Step 5: Add locations to trips
+      //   const getDrone = () => {
+             
+      //     drones.sort(compareByName);
+
+      //     while (remainingLocations.length > 0) {
+      //       let drone = processNextDrone();
+      //       let remainingCapacity = drone.weight;
+      //       let tripIndex = 1;
+
+      //         // Inicie o processamento chamando a função para o primeiro drone
+            
+      //         const currentTrip = [];
+      //         let locationsToRemove = [];
+              
+      //         remainingLocations.forEach((location, index) => {
+      //           if (remainingCapacity >= location.weight) {
+      //             currentTrip.push(location);
+      //             remainingCapacity -= location.weight;
+      //             locationsToRemove.push(index);
+      //           }
+      //         });
+
+      //         // Removendo os locais adicionados à viagem atual
+      //         locationsToRemove.reverse().forEach(index => {
+      //           remainingLocations.splice(index, 1);
+      //         });
+
+      //         if (currentTrip.length > 0) {
+      //             drone.trips.push({
+      //               tripNumber: tripIndex,
+      //               locations: currentTrip
+      //             });
+                
+      //           remainingCapacity = drone.weight;
+      //           tripIndex++;
+
+      //         } else {
+      //           break; // Sai do loop se não houver locais suficientes para uma viagem
+      //         }
+      //       }
+      //     }
+      
+      //   let currentIndex = 0;
+
+      //   function processNextDrone() {
+      //     const currentDrone = drones[currentIndex];
+
+      //     // Faça o processamento necessário para o drone atual aqui
+      //     console.log('Processando o drone:', currentDrone);
+      //       // Atualize o índice para avançar para o próximo drone
+      //     ++currentIndex;
+
+      //     // Atualize o índice para avançar para o próximo drone
+          
+
+      //     // Verifique se todos os drones foram processados e ainda há locais restantes
+      //     if (currentIndex >= drones.length && remainingLocations.length > 0) {
+      //       // Reinicie a iteração dos drones
+      //       currentIndex = 0;
+      //       console.log('Reiniciando a iteração dos drones.');
+      //     }
+
+      //     // Verifique se ainda há drones para processar e locais restantes
+      //     if (currentIndex <= drones.length && remainingLocations.length > 0) {
+      //       // Aguarde um intervalo de tempo antes de chamar o próximo drone (opcional)
+      //       return drones[currentIndex];
+      //     } else {
+      //       console.log('Não há mais locais.');
+      //     }
+      //   }
+
+      //     getDrone()
+
+
+      //   // Step 6: Output trips for each drone
+      //   const show = () => {
      
-        drones.forEach(drone => {
-          let loca = '';
-          console.log(`${drone.name}`);
-       //   drone.trips.splice(0, 1);
-          drone.trips.forEach((trips, index) => {
-            console.log(`Trip #${index + 1}`);
-            trips.locations.forEach(location => { 
-              loca = loca  + ' ' + location.name ;
-            });
-            console.log(loca);
-          });
-        });
-      }
+      //   drones.forEach(drone => {
+      //     let loca = '';
+      //     console.log(`${drone.name}`);
+      //  //   drone.trips.splice(0, 1);
+      //     drone.trips.forEach((trips, index) => {
+      //       console.log(`Trip #${index + 1}`);
+      //       trips.locations.forEach(location => { 
+      //         loca = loca  + ' ' + location.name ;
+      //       });
+      //       console.log(loca);
+      //     });
+      //   });
+      // }
 
-      show();
+      // show();
+
+        //part 2
 
         // Step 7: Output the result
         // The result will be printed in the console
