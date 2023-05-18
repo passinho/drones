@@ -102,7 +102,7 @@ export default {
         //cria um objeto para armazenar os drones e seus pesos
         const AllElements = {};
         names.forEach( function (value, i) { 
-            AllElements[i] = { name: names[i], value: weight[i], weight: weight[i].replace('[', '').replace(']', ''), maxCapacity: weight[i].replace('[', '').replace(']', '') }
+            AllElements[i] = { name: names[i], value: weight[i], weight: parseFloat(weight[i].replace('[', '').replace(']', '')), }
         })
 
       //   // Extrai informações dos drones e das localizações
@@ -139,77 +139,57 @@ export default {
         });
 
         let newLocations = [...locations]; // Criando uma cópia da lista original de locais
+        let currentIndex = 0;
 
-
-      function filterLocations(locations, targetValue) {
-          const filteredLocations = locations.reduce((accumulator, location) => {
-            const totalWeight = accumulator.reduce((sum, loc) => sum + loc.weight, 0);
+      function filterLocations(targetValue) {
+          const filteredLocations = newLocations.reduce((accumulator, location) => {
+            let totalWeight = accumulator.reduce((sum, loc) => sum + loc.weight, 0);
             if (totalWeight + location.weight <= targetValue) {
               accumulator.push(location);
             }
             return accumulator;
           }, []);
 
-          const remainingLocations = locations.filter(location => !filteredLocations.includes(location));
+            newLocations = newLocations.filter(location => !filteredLocations.includes(location));
 
-          return { filteredLocations, remainingLocations };
+          return { filteredLocations };
         }
-
-
-        const targetValue = 200;
-
-
 
 
         while (newLocations.length > 0) {
-          let drone = processNextDrone(); 
+          if (currentIndex == drones.length)
+              currentIndex = 0;
+
+          let drone = processNextDrone(currentIndex++); 
           
-          let { filteredLocations, remainingLocations } = filterLocations(newLocations, drone,weight);
+          let { filteredLocations } = filterLocations( drone.weight );
 
             drone.trips.push({
-                tripNumber: tripIndex,
+                tripNumber: drone.trips.length + 1,
                 locations: filteredLocations
               });
+
+          if( newLocations.length == 0 ) break;
+
         }
-
-
 
         function processNextDrone(currentIndex) {
             const currentDrone = drones[currentIndex];
-
             // Faça o processamento necessário para o drone atual aqui
-            console.log('Processando o drone:', currentDrone);
-              // Atualize o índice para avançar para o próximo drone
-            ++currentIndex;
-
+            
             // Atualize o índice para avançar para o próximo drone
+            return drones[currentIndex];
 
-
-            // Verifique se todos os drones foram processados e ainda há locais restantes
-            if (currentIndex >= drones.length && remainingLocations.length > 0) {
-              // Reinicie a iteração dos drones
-              currentIndex = 0;
-              console.log('Reiniciando a iteração dos drones.');
-            }
-
-            // Verifique se ainda há drones para processar e locais restantes
-            if (currentIndex <= drones.length && remainingLocations.length > 0) {
-              // Aguarde um intervalo de tempo antes de chamar o próximo drone (opcional)
-              return drones[currentIndex];
-            } else {
-              console.log('Não há mais locais.');
-            }
           }
 
 
-        console.log('Filtered Locations:');
-        filteredLocations.forEach(location => console.log(location.name));
+        drones.sort(compareByName);
 
-        console.log('Remaining Locations:');
-        remainingLocations.forEach(location => console.log(location.name));
-
-
-
+        drones.forEach(drone => {
+           console.log('Processando o drone:', drone);
+        });
+        content = drones;
+         
 
                 //part 2
       //   // Step 5: Add locations to trips
