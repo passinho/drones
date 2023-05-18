@@ -38,7 +38,16 @@
                 </div>
                 <div class="p-6">
                   <!-- Drones Items -->
-                     <span>{{ content }}</span>
+                 <div v-for="(value) in drones" :key="drones">
+                      <h1 class="drone"> {{ value.name  }}</h1>
+                      <ul class="trip">
+                        <li v-for="(item, index) in value.trips" :key="index">
+                          <span>Trip #{{ item.tripNumber }} </span>
+                          <div > {{ even(item.locations) }} </div> 
+                        </li>
+                      </ul>
+                    </div>
+                     
                 </div>
               </div>
             </div>
@@ -54,18 +63,26 @@ export default {
     return {
       is_dragover: false,
       file: null, 
-      content: null,
-      drones: null,
-      locations: null
+      drones: [],
+      locations: [],
+      newlocations: []
     };
   },
-  props: {
-    content: 'Hello'
+  mounted() {
+
+    this.drones = [{ name:'Carregue a lista de drones' },];
+
   },
   methods: {
+
+    even(array) {
+         return array.map(objeto => objeto['name']).join(",");
+    },
+
     upload($event) {
       this.is_dragover = false;
-
+      this.drones = [];
+      
        this.file = $event.dataTransfer
         ? [...$event.dataTransfer.files]
         : [...$event.target.files];
@@ -80,38 +97,69 @@ export default {
         if (file.name.includes(".txt")) {
 
           reader.onload = (res) => {
-            processInput(res.target.result);
+            this.processInput(res.target.result);
           };
           reader.onerror = (err) => console.log(err);
           reader.readAsText(file);
 
         } else {
-
           console.war("Format file not permit");
-
         }
      });
+    },
 
-      // separa as informações do input em arrays distintos
-      function processInput(input) {
+    // separates input information into distinct arrays
+    processInput(input) {
 
-      //  // divide a string de entrada em linhas
-        const names = input.match(/\[(.*?)\]/g).filter((_, i) => i % 2 === 0);
-        const weight = input.match(/\[(.*?)\]/g).filter((_, i) => i % 2 === 1);
+      // splits the input string into lines
+      const names = input.match(/\[(.*?)\]/g).filter((_, i) => i % 2 === 0);
+      const weight = input.match(/\[(.*?)\]/g).filter((_, i) => i % 2 === 1);
 
-        //cria um objeto para armazenar os drones e seus pesos
-        const AllElements = {};
-        names.forEach( function (value, i) { 
-            AllElements[i] = { name: names[i], value: weight[i], weight: parseFloat(weight[i].replace('[', '').replace(']', '')), }
-        })
+      // creates an object to store the drones and their weights
+      const AllElements = {};
+      names.forEach( function (value, i) { 
+          AllElements[i] = { name: names[i], value: weight[i], weight: parseFloat(weight[i].replace('[', '').replace(']', '')), }
+      })
 
-      //   // Extrai informações dos drones e das localizações
-        const drones = Object.values(AllElements).filter(x => x.name.includes("Drone"));
-        let locations = Object.values(AllElements).filter(x => x.name.includes("Location"));
+      // Extract information from drones and locations
+      this.drones = Object.values(AllElements).filter(x => x.name.includes("Drone"));
+      this.locations = Object.values(AllElements).filter(x => x.name.includes("Location"));
 
+      // Sort locations by weight
+      this.locations.sort((a, b) => b.weight - a.weight);
 
-        // Custom comparison function
-        function compareByName(a, b) {
+      // Create list of trips for each drone
+      this.drones.forEach(drone => {
+        drone.trips = [];
+      });
+
+      // Creating a copy of the original list of locations
+      this.newLocations = [...this.locations]; 
+      let currentIndex = 0;
+
+      while (this.newLocations.length > 0) {
+        if (currentIndex == this.drones.length)
+          currentIndex = 0;
+
+        let drone = this.processNextDrone(currentIndex++);
+
+        let { filteredLocations } = this.filterLocations(drone.weight);
+
+        drone.trips.push({
+          tripNumber: drone.trips.length + 1,
+          locations: filteredLocations
+        });
+
+        if (this.newLocations.length == 0) break;
+
+      }
+
+      this.drones.sort(this.compareByName);
+
+      },
+
+      // Custom comparison function
+      compareByName(a, b) {
           const nameA = a.name.toUpperCase();
           const nameB = b.name.toUpperCase();
 
@@ -124,25 +172,11 @@ export default {
           }
 
           return 0;
-        }
+        },
 
-
-        // Step 2: Sort drones by maximum weight capacity
-        drones.sort((a, b) => b.weight - a.weight);
-        
-        // Step 3: Sort locations by weight
-        locations.sort((a, b) => b.weight - a.weight);
-
-        // Step 4: Create list of trips for each drone
-        drones.forEach(drone => {
-          drone.trips = [];
-        });
-
-        let newLocations = [...locations]; // Criando uma cópia da lista original de locais
-        let currentIndex = 0;
-
-      function filterLocations(targetValue) {
-          const filteredLocations = newLocations.reduce((accumulator, location) => {
+      filterLocations(targetValue) {
+          //filter list location to get all location able to target
+          const filteredLocations = this.newLocations.reduce((accumulator, location) => {
             let totalWeight = accumulator.reduce((sum, loc) => sum + loc.weight, 0);
             if (totalWeight + location.weight <= targetValue) {
               accumulator.push(location);
@@ -150,181 +184,23 @@ export default {
             return accumulator;
           }, []);
 
-            newLocations = newLocations.filter(location => !filteredLocations.includes(location));
+            this.newLocations = this.newLocations.filter(location => !filteredLocations.includes(location));
 
           return { filteredLocations };
+        },
+
+
+        processNextDrone(currentIndex) {
+            // get drone by index
+            return this.drones[currentIndex];
         }
-
-
-        while (newLocations.length > 0) {
-          if (currentIndex == drones.length)
-              currentIndex = 0;
-
-          let drone = processNextDrone(currentIndex++); 
-          
-          let { filteredLocations } = filterLocations( drone.weight );
-
-            drone.trips.push({
-                tripNumber: drone.trips.length + 1,
-                locations: filteredLocations
-              });
-
-          if( newLocations.length == 0 ) break;
-
-        }
-
-        function processNextDrone(currentIndex) {
-            const currentDrone = drones[currentIndex];
-            // Faça o processamento necessário para o drone atual aqui
-            
-            // Atualize o índice para avançar para o próximo drone
-            return drones[currentIndex];
-
-          }
-
-
-        drones.sort(compareByName);
-
-        drones.forEach(drone => {
-           console.log('Processando o drone:', drone);
-        });
-        content = drones;
-         
-
-                //part 2
-      //   // Step 5: Add locations to trips
-      //   const getDrone = () => {
-             
-      //     drones.sort(compareByName);
-
-      //     while (remainingLocations.length > 0) {
-      //       let drone = processNextDrone();
-      //       let remainingCapacity = drone.weight;
-      //       let tripIndex = 1;
-
-      //         // Inicie o processamento chamando a função para o primeiro drone
-            
-      //         const currentTrip = [];
-      //         let locationsToRemove = [];
-              
-      //         remainingLocations.forEach((location, index) => {
-      //           if (remainingCapacity >= location.weight) {
-      //             currentTrip.push(location);
-      //             remainingCapacity -= location.weight;
-      //             locationsToRemove.push(index);
-      //           }
-      //         });
-
-      //         // Removendo os locais adicionados à viagem atual
-      //         locationsToRemove.reverse().forEach(index => {
-      //           remainingLocations.splice(index, 1);
-      //         });
-
-      //         if (currentTrip.length > 0) {
-      //             drone.trips.push({
-      //               tripNumber: tripIndex,
-      //               locations: currentTrip
-      //             });
-                
-      //           remainingCapacity = drone.weight;
-      //           tripIndex++;
-
-      //         } else {
-      //           break; // Sai do loop se não houver locais suficientes para uma viagem
-      //         }
-      //       }
-      //     }
-      
-      //   let currentIndex = 0;
-
-      //   function processNextDrone() {
-      //     const currentDrone = drones[currentIndex];
-
-      //     // Faça o processamento necessário para o drone atual aqui
-      //     console.log('Processando o drone:', currentDrone);
-      //       // Atualize o índice para avançar para o próximo drone
-      //     ++currentIndex;
-
-      //     // Atualize o índice para avançar para o próximo drone
-          
-
-      //     // Verifique se todos os drones foram processados e ainda há locais restantes
-      //     if (currentIndex >= drones.length && remainingLocations.length > 0) {
-      //       // Reinicie a iteração dos drones
-      //       currentIndex = 0;
-      //       console.log('Reiniciando a iteração dos drones.');
-      //     }
-
-      //     // Verifique se ainda há drones para processar e locais restantes
-      //     if (currentIndex <= drones.length && remainingLocations.length > 0) {
-      //       // Aguarde um intervalo de tempo antes de chamar o próximo drone (opcional)
-      //       return drones[currentIndex];
-      //     } else {
-      //       console.log('Não há mais locais.');
-      //     }
-      //   }
-
-      //     getDrone()
-
-
-      //   // Step 6: Output trips for each drone
-      //   const show = () => {
-     
-      //   drones.forEach(drone => {
-      //     let loca = '';
-      //     console.log(`${drone.name}`);
-      //  //   drone.trips.splice(0, 1);
-      //     drone.trips.forEach((trips, index) => {
-      //       console.log(`Trip #${index + 1}`);
-      //       trips.locations.forEach(location => { 
-      //         loca = loca  + ' ' + location.name ;
-      //       });
-      //       console.log(loca);
-      //     });
-      //   });
-      // }
-
-      // show();
-
-        //part 2
-
-        // Step 7: Output the result
-        // The result will be printed in the console
-
-
-
-          // while ( locations.length > 0 ){
-          //   deliveryList = [];
-          //   locations.forEach(function (value, i) {
-          //       if (parseFloat(value.weight) <= remainingWeight) {
-          //         deliveryList.push({ trip: tripNum++ , route: value });
-          //         remainingWeight -= parseFloat(value.weight);
-          //       }
-          //     });
-
-          //   locations = locations.filter(
-          //     (obj) => !deliveryList.includes(obj)
-          //   );
-
-          //   if (deliveryList.length >= 3) {
-          //       ListLocation.push(deliveryList);
-          //       remainingWeight = parseFloat(drone.weight);
-          //       continue;
-          //   } else {
-          //       DroneList.push({ drone: drone, deliveryList: deliveryList });
-          //       break;
-          //   }
-          //}
-          
-        //});
-
-        // Imprime a lista de entregas
-        //this.content = DroneList;
-       // console.log(DroneList);
     
-      }
-      
-    },
   },
 };
 </script>
+
+<style scoped>
+    .drone{
+      margin: 15px 0 0 0;
+    }
+</style>
