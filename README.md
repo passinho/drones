@@ -2,6 +2,8 @@ Drone Delivery Service
 A squad of drones is tasked with delivering packages for a major online retailer in a world where 
 time and distance do not matter.
 
+## You  could find the files to test at src: drone/public/files
+
 
 ## Recommended IDE Setup
 
