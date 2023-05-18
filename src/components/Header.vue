@@ -8,7 +8,7 @@
         :to="{ name: 'manage' }"
         exact-active-class="no-active"
       >
-        Test Drones Ricardo Passinho
+        Test Drones
       </router-link>
     </nav>
   </header>

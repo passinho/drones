@@ -125,6 +125,10 @@ export default {
       this.drones = Object.values(AllElements).filter(x => x.name.includes("Drone"));
       this.locations = Object.values(AllElements).filter(x => x.name.includes("Location"));
 
+      if( this.locations.length > 100 )
+        this.drones = [{ name: 'Não é possivel processa uma lista com mais de 100 drones' },];
+        
+      
       // Sort locations by weight
       this.locations.sort((a, b) => b.weight - a.weight);
 
@@ -137,7 +141,7 @@ export default {
       this.newLocations = [...this.locations]; 
       let currentIndex = 0;
 
-      while (this.newLocations.length > 0) {
+      while (this.newLocations.length > 0  &&  this.newLocations.length <= 100) {
         if (currentIndex == this.drones.length)
           currentIndex = 0;
 
