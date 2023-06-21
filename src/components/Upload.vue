@@ -39,6 +39,7 @@
                 <div class="p-6">
                   <!-- Drones Items -->
                  <div v-for="(value) in drones" :key="drones">
+                      <span> {{ nome }} </span>
                       <h1 class="drone"> {{ value.name  }}</h1>
                       <ul class="trip">
                         <li v-for="(item, index) in value.trips" :key="index">
@@ -57,6 +58,9 @@
 
 <script>
 
+// import { mapState } from "pinia";
+// import { useDroneStore  } from '../store/droneStore';
+
 export default {
   name: "Upload",
   data() {
@@ -65,15 +69,21 @@ export default {
       file: null, 
       drones: [],
       locations: [],
-      newlocations: []
+      newlocations: [],
     };
   },
+  computed: {
+    
+   // ...mapState(useDroneStore),
+  },
+
   mounted() {
 
     this.drones = [{ name:'Carregue a lista de drones' },];
 
   },
   methods: {
+      // ...mapActions(useDroneStore, ["increment"]),
 
     even(array) {
          return array.map(objeto => objeto['name']).join(",");
@@ -203,6 +213,9 @@ export default {
         }
     
   },
+    // computed: {
+    // ...mapState(usePlayerStore, ["count"]),
+    // },
 };
 </script>
 
